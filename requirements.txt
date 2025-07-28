@@ -4,3 +4,4 @@ dnspython
 markdown2
 better-profanity
 werkzeug
+gunicorn
