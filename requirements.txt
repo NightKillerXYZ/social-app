@@ -1,0 +1,6 @@
+Flask
+pymongo
+dnspython
+markdown2
+better-profanity
+werkzeug

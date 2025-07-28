@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Q&A Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { background: #f7f8fa; font-family: 'San Francisco',Arial,sans-serif; margin:0; padding:0;}
+    .navbar { width:100%; background-color:#2453ff; color:#fff; padding:18px 32px; font-size:22px; letter-spacing:1px; box-shadow:0 2px 8px rgba(36,83,255,0.08); display:flex; align-items:center; justify-content:space-between;}
+    .navbar a { color:#fff; text-decoration:none; font-size:17px; font-weight:500; opacity:0.9;}
+    .container { max-width:600px; margin:36px auto 0 auto; background:#fff; border-radius:16px; box-shadow:0 4px 18px rgba(0,0,0,.07); padding:32px 18px 28px;}
+    .chat-thread { margin-bottom:30px; padding-top:14px;}
+    .chat-msg { display:flex; margin-bottom:20px; }
+    .bubble { max-width: 75%; padding:16px 18px; border-radius:20px; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.06); line-height:25px; word-break:break-word; margin-bottom:3px; position:relative;}
+    .bubble-question { margin-right:auto; background: linear-gradient(97deg,#2453ff 80%,#4267ee 100%); color:#fff; border-bottom-left-radius:4px; border-bottom-right-radius:18px; border-top-left-radius:18px; border-top-right-radius:20px; font-weight:600;}
+    .bubble-answer { margin-left:auto; background:#f2f3fb; color:#20222a; border-bottom-right-radius:4px; border-bottom-left-radius:18px; border-top-right-radius:18px; border-top-left-radius:20px; border:1.5px solid #2453ff22;}
+    .bubble .chat-img-pop { display:inline-block; margin-top:12px; margin-left:2px; }
+    .bubble img {
+      display: block;
+      width: 25%; height: auto; max-width:200px; min-width:42px; border-radius:7px;
+      background: #ececec; box-shadow:0 1.5px 4px #2453ff11; cursor: zoom-in; transition: box-shadow 0.17s; object-fit: cover;
+    }
+    .bubble img:hover { box-shadow:0 4px 18px #2453ff33; }
+    .doc-link {
+      display:inline-flex; align-items:center; background:#ececec; color:#2453ff; border-radius:6px; padding:2px 9px 2px 5px; margin:10px 7px 0 0; font-size:15px; text-decoration:none; border:1px solid #dbe1fd; font-weight:500; transition:background 0.13s;
+    }
+    .doc-link:hover { background: #e6eaff; color: #0027a0; text-decoration: underline;}
+    .doc-icon { font-weight:700; margin-right:6px; background:#d5defa; color:#2453ff; border-radius:4px; padding:2px 6px; font-size:13px;}
+    .chat-video { width:60%; margin:11px 0 0 0; border-radius:7px; display:block;}
+    .chat-audio { width:60%; margin:10px 0 0 0; }
+    .meta { font-size:14px; color:#8598bb; margin:3px 8px 10px; font-style: italic; letter-spacing:0.1px;}
+    .answer-section-title { margin:16px 0 7px 3px; font-size:18px; color:#2453ff; font-weight:600; letter-spacing:0.1px; border-left:3px solid #2453ff; padding-left:8px;}
+    .add-answer-btn { display:inline-block; margin:16px 0 8px 2px; padding:10px 26px; background-color:#2453ff; color:#fff; border:none; border-radius:16px; font-size:16px; font-weight:600; cursor:pointer; letter-spacing:0.3px; box-shadow:0 2px 8px #2453ff22; transition:background 0.2s, box-shadow 0.15s;}
+    .add-answer-btn:hover { background:#183db1; box-shadow:0 4px 16px #2453ff25;}
+    .answer-form { margin:8px 0 20px 0; display:none; flex-direction:column; align-items:stretch; animation:fadeIn 0.33s;}
+    @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+    .format-toolbar { margin-bottom:6px; display:flex; gap:6px; flex-wrap:wrap;}
+    .format-toolbar button { border:none; background:#e7eafd; color:#2453ff; font-size:15px; font-weight:700; padding:5px 9px; border-radius:6px; cursor:pointer; transition:background 0.14s;}
+    .format-toolbar button:hover { background: #d0dafe; }
+    .answer-form textarea, .answer-form input[type="file"] { font-size:16px; resize:vertical; border-radius:10px; border:1.2px solid #b9c7ef; padding:10px 12px; margin-bottom:10px; box-shadow:0 1.5px 5px #2453ff14;}
+    .submit-btn { margin:0 auto; padding:10px 42px; font-size:15px; border-radius:16px; border:none; background:linear-gradient(98deg,#2453ff 90%,#5776e9 100%); color:#fff; cursor:pointer; font-weight:700; letter-spacing:0.1px; transition:background 0.16s; box-shadow: 0 1.5px 4px #2453ff15;}
+    .submit-btn:hover { background:#183db1; }
+    .no-answers-hint { margin:19px 0 9px; color:#888; font-style:italic; font-size:15px; text-align:left;}
+    .help-note { font-size:14px; color:#888; margin-bottom:10px;}
+    .delete-btn { background:#ff4848; color:#fff; border:none; border-radius:10px; padding:6px 15px; cursor:pointer; font-size:15px; margin-left:8px;}
+    .delete-answer-btn {background:#ff4848;color:#fff;border:none;border-radius:10px;padding:4px 10px;cursor:pointer;font-size:13px;margin-left:7px;}
+    .delete-key-field { border-radius:6px; border:1px solid #bbb; font-size:13px; padding:3px 7px; width:100px; margin-left:5px;}
+    .delete-key-field-answer { border-radius:6px; border:1px solid #bbb; font-size:12px; padding:2px 6px; width:80px; margin-left:4px;}
+    /* MODAL LIGHTBOX */
+    .img-modal-overlay { display:none; position:fixed; z-index:999999; top:0; left:0; width:100vw; height:100vh; background:rgba(31,38,74,0.85); align-items:center; justify-content:center;}
+    .img-modal-overlay.active { display:flex;}
+    .img-modal-img { max-width:92vw; max-height:80vh; border-radius:12px; box-shadow:0 8px 30px rgba(36,83,255,0.32); background:#fff; margin:0 20px; display:block;}
+    .img-modal-close { position:fixed; top:4vh; right:3vw; font-size:40px; color:#fff; background:none; border:none; cursor:pointer; z-index:9999999; line-height:1; border-radius:99px; box-shadow:0 4px 18px #2453ff44; padding:0 13px 3px 13px; transition:background 0.15s;}
+    .img-modal-close:hover { background: #446bde55; }
+    @media (max-width:650px){
+      .container { max-width:99vw; padding:10px 2vw 24px;}
+      .navbar { padding:12px 8px; font-size:18px;}
+      .bubble { font-size:15px;}
+      .bubble img { width:50%; min-width:22px; max-width:98vw;}
+      .img-modal-img { max-width:98vw;}
+      .answer-section-title {font-size:15px;}
+      .add-answer-btn, .submit-btn { font-size:14px; padding:8px 16px;}
+      .delete-btn, .delete-answer-btn {font-size:12px;padding:4px 10px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <a href="{{ url_for('index') }}">&#8678; All Questions</a>
+    <span>Student Q&A</span>
+    <span></span>
+  </div>
+  <div class="container">
+    <div class="chat-thread">
+      <div style="display:flex;align-items:center;">
+        <div class="chat-msg" style="flex:1;">
+          <div class="bubble bubble-question">
+            <b>Q:</b> {{ question['text_rendered']|safe }}
+            {% if question.get('file_attachments') %}
+              {% for f in question.file_attachments %}
+                {% if f.type in ['png','jpg','jpeg','gif'] %}
+                  <a href="#" class="chat-img-pop" data-img="{{ url_for('static', filename=f.url) }}">
+                    <img src="{{ url_for('static', filename=f.url) }}" alt="{{ f.name }}">
+                  </a>
+                {% elif f.type in ['pdf','docx','pptx'] %}
+                  <a href="{{ url_for('static', filename=f.url) }}" target="_blank" class="doc-link">
+                    <span class="doc-icon">{{ f.type|upper }}</span> {{ f.name }}
+                  </a>
+                {% elif f.type in ['mp4','mov'] %}
+                  <video class="chat-video" controls>
+                    <source src="{{ url_for('static', filename=f.url) }}">
+                    Your browser does not support video.
+                  </video>
+                {% elif f.type == 'mp3' %}
+                  <audio class="chat-audio" controls>
+                    <source src="{{ url_for('static', filename=f.url) }}">
+                    Your browser does not support audio.
+                  </audio>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('delete_question', question_id=question['_id']) }}" style="margin-left:10px; display:inline;">
+          <input type="password" name="admin_key" class="delete-key-field" placeholder="Admin key" required>
+          <button type="submit" class="delete-btn">Delete Question (Admin)</button>
+        </form>
+      </div>
+      <div class="meta">Asked on {{ question['timestamp'].strftime('%Y-%m-%d %H:%M') }}</div>
+
+      <button class="add-answer-btn" onclick="showAnswerForm()">Add Answer</button>
+      <form class="answer-form" method="post" enctype="multipart/form-data" id="answer-form">
+        <div class="help-note">
+          <b>Formatting:</b>
+          <code>**bold**</code> <code>*italic*</code> <code>~~strike~~</code>
+          <code>~sub~</code> <code>^^super^^</code>
+        </div>
+        <div class="format-toolbar">
+          <button type="button" onclick="insertAtCursor(this, '**', '**')" title="Bold"><b>B</b></button>
+          <button type="button" onclick="insertAtCursor(this, '*', '*')" title="Italic"><i>I</i></button>
+          <button type="button" onclick="insertAtCursor(this, '~~', '~~')" title="Strike"><s>S</s></button>
+          <button type="button" onclick="insertAtCursor(this, '~', '~')" title="Subscript">X<sub>2</sub></button>
+          <button type="button" onclick="insertAtCursor(this, '^^', '^^')" title="Superscript">X<sup>2</sup></button>
+        </div>
+        <textarea name="answer" rows="3" placeholder="Write your answer (anonymous)..." required></textarea>
+        <label style="margin: 7px 0 10px 0;">Attach Files (images, pdf, docx, pptx, mp4, mov, mp3):
+          <input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,.pdf,.docx,.pptx,.mp4,.mov,.mp3" multiple>
+        </label>
+        <button class="submit-btn" type="submit">Post Answer</button>
+      </form>
+
+      <div class="answer-section-title">Answers</div>
+      {% for a in answers %}
+        <div class="chat-msg">
+          <div class="bubble bubble-answer">
+            {{ a['text_rendered']|safe }}
+            {% if a.get('file_attachments') %}
+              {% for f in a.file_attachments %}
+                {% if f.type in ['png','jpg','jpeg','gif'] %}
+                  <a href="#" class="chat-img-pop" data-img="{{ url_for('static', filename=f.url) }}">
+                    <img src="{{ url_for('static', filename=f.url) }}" alt="{{ f.name }}">
+                  </a>
+                {% elif f.type in ['pdf','docx','pptx'] %}
+                  <a href="{{ url_for('static', filename=f.url) }}" target="_blank" class="doc-link">
+                    <span class="doc-icon">{{ f.type|upper }}</span> {{ f.name }}
+                  </a>
+                {% elif f.type in ['mp4','mov'] %}
+                  <video class="chat-video" controls>
+                    <source src="{{ url_for('static', filename=f.url) }}">
+                    Your browser does not support video.
+                  </video>
+                {% elif f.type == 'mp3' %}
+                  <audio class="chat-audio" controls>
+                    <source src="{{ url_for('static', filename=f.url) }}">
+                    Your browser does not support audio.
+                  </audio>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+            <form method="post" action="{{ url_for('delete_answer', answer_id=a['_id'], question_id=question['_id']) }}" style="display:inline;">
+              <input type="password" name="admin_key" class="delete-key-field-answer" placeholder="Admin key" required>
+              <button type="submit" class="delete-answer-btn">Delete (Admin)</button>
+            </form>
+          </div>
+        </div>
+        <div class="meta" style="text-align:right; margin-bottom:7px;">Answered {{ a['timestamp'].strftime('%Y-%m-%d %H:%M') }}</div>
+      {% endfor %}
+      {% if not answers %}
+        <div class="no-answers-hint">No answers yet. Be the first to answer!</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- MODAL/LIGHTBOX HTML -->
+  <div class="img-modal-overlay" id="img-modal">
+    <button class="img-modal-close" id="img-modal-close" type="button">&times;</button>
+    <img src="" id="img-modal-img" class="img-modal-img" alt="Preview">
+  </div>
+
+  <script>
+    function showAnswerForm() {
+      document.querySelector('.add-answer-btn').style.display = 'none';
+      document.getElementById('answer-form').style.display = 'flex';
+      document.getElementById('answer-form').scrollIntoView({behavior: "smooth"});
+      document.querySelector('.answer-form textarea').focus();
+    }
+    function insertAtCursor(btn, before, after) {
+      let area = btn.parentElement.parentElement.querySelector('textarea');
+      if (!area) return;
+      area.focus();
+      let start = area.selectionStart, end = area.selectionEnd;
+      let val = area.value;
+      let selected = val.substring(start, end);
+      let replacement = before + selected + after;
+      area.value = val.substring(0, start) + replacement + val.substring(end);
+      let cursorPos = start + before.length + (selected.length ? selected.length + after.length : 0);
+      area.setSelectionRange(cursorPos, cursorPos);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const modal = document.getElementById('img-modal');
+      const modalImg = document.getElementById('img-modal-img');
+      const modalClose = document.getElementById('img-modal-close');
+      document.querySelectorAll('.chat-img-pop').forEach(function(link) {
+        link.addEventListener("click", function(e){
+          e.preventDefault();
+          modalImg.src = this.getAttribute('data-img');
+          modal.classList.add("active");
+        });
+      });
+      modalClose.addEventListener("click", function(){
+        modal.classList.remove("active"); modalImg.src = "";
+      });
+      modal.addEventListener("click", function(e){
+        if(e.target === modal){ modal.classList.remove("active"); modalImg.src = ""; }
+      });
+      document.addEventListener("keydown", function(e){
+        if (e.key === "Escape" && modal.classList.contains("active")) {
+          modal.classList.remove("active"); modalImg.src = "";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
